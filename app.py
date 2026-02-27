@@ -25,6 +25,30 @@ def load_sentiment_model():
 def load_summarizer():
     return pipeline("summarization", model="facebook/bart-large-cnn")
 
+@st.cache_resource
+def load_ner_model():
+    return pipeline("ner", model="dslim/bert-base-NER", aggregation_strategy="simple")
+
+ENTITY_COLORS = {
+    "PER": "#a8d8ea",
+    "ORG": "#ffd3b6",
+    "LOC": "#d4edda",
+    "MISC": "#e2d5f1"
+}
+
+def render_ner_html(text, entities):
+    html = ""
+    prev = 0
+    for ent in entities:
+        start, end = ent['start'], ent['end']
+        label = ent['entity_group']
+        color = ENTITY_COLORS.get(label, "#eeeeee")
+        html += text[prev:start]
+        html += f'<mark style="background:{color};padding:2px 6px;border-radius:4px;font-weight:600;">{text[start:end]} <sup style="font-size:0.65rem;">{label}</sup></mark>'
+        prev = end
+    html += text[prev:]
+    return html
+
 with tab1:
     st.subheader("💬 Sentiment Analysis")
     st.markdown("Detects whether a piece of text carries a **positive** or **negative** sentiment using DistilBERT.")
@@ -72,4 +96,38 @@ with tab2:
 
 with tab3:
     st.subheader("🔍 Named Entity Recognition")
-    st.info("⏳ Coming soon...")
+    st.markdown("Identifies and classifies **people, organizations, locations, and misc entities** in text using BERT-NER.")
+
+    st.markdown("""
+    <div style='display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;'>
+        <span style='background:#a8d8ea;padding:3px 10px;border-radius:4px;font-weight:600;'>PER &nbsp;Person</span>
+        <span style='background:#ffd3b6;padding:3px 10px;border-radius:4px;font-weight:600;'>ORG &nbsp;Organization</span>
+        <span style='background:#d4edda;padding:3px 10px;border-radius:4px;font-weight:600;'>LOC &nbsp;Location</span>
+        <span style='background:#e2d5f1;padding:3px 10px;border-radius:4px;font-weight:600;'>MISC &nbsp;Miscellaneous</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    ner_input = st.text_area("Enter text", placeholder="e.g. Elon Musk founded SpaceX in Hawthorne, California.", height=150, key="ner_input")
+
+    if st.button("Extract Entities", use_container_width=True):
+        if ner_input.strip():
+            with st.spinner("Identifying entities..."):
+                ner_model = load_ner_model()
+                entities = ner_model(ner_input)
+            if entities:
+                st.subheader("Annotated Text")
+                html = render_ner_html(ner_input, entities)
+                st.markdown(f"<div style='line-height:2.2;font-size:1.05rem;padding:12px;background:#f9f9f9;border-radius:8px;'>{html}</div>", unsafe_allow_html=True)
+
+                st.subheader("Entities Found")
+                import pandas as pd
+                df = pd.DataFrame([{
+                    "Entity": e['word'],
+                    "Type": e['entity_group'],
+                    "Confidence": f"{e['score']:.2%}"
+                } for e in entities])
+                st.dataframe(df, use_container_width=True, hide_index=True)
+            else:
+                st.info("No named entities found in the text.")
+        else:
+            st.warning("Please enter some text first.")
