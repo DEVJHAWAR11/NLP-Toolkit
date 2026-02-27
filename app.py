@@ -25,7 +25,7 @@ def load_sentiment_model():
 
 @st.cache_resource
 def load_summarizer():
-    return pipeline("summarization", model="facebook/bart-large-cnn")
+    return pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 
 @st.cache_resource
 def load_ner_model():
@@ -71,7 +71,7 @@ with tab1:
 
 with tab2:
     st.subheader("📝 Text Summarization")
-    st.markdown("Condenses long articles or paragraphs into a short summary using **BART** (Facebook).")
+    st.markdown("Condenses long articles or paragraphs into a short summary using **DistilBART** (distilled from BART).")
     text_to_summarize = st.text_area("Paste your text here", placeholder="Paste a long article, paragraph, or document...", height=200, key="sum_input")
     col1, col2 = st.columns(2)
     with col1:
@@ -85,7 +85,13 @@ with tab2:
             else:
                 with st.spinner("Summarizing..."):
                     summarizer = load_summarizer()
-                    summary = summarizer(text_to_summarize, max_length=max_len, min_length=min_len, do_sample=False)
+                    summary = summarizer(
+                        text_to_summarize,
+                        max_length=max_len,
+                        min_length=min_len,
+                        do_sample=False,
+                        truncation=True
+                    )
                 st.subheader("📌 Summary")
                 st.write(summary[0]['summary_text'])
         else:
@@ -135,7 +141,7 @@ with st.sidebar:
     st.subheader("🤖 Models Used")
     st.markdown("""
     - **Sentiment** — `distilbert-base-uncased-finetuned-sst-2-english`
-    - **Summarizer** — `facebook/bart-large-cnn`
+    - **Summarizer** — `sshleifer/distilbart-cnn-12-6`
     - **NER** — `dslim/bert-base-NER`
     """)
     st.markdown("---")
