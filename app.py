@@ -21,6 +21,10 @@ tab1, tab2, tab3 = st.tabs(["💬 Sentiment Analysis", "📝 Summarization", "�
 def load_sentiment_model():
     return pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
 
+@st.cache_resource
+def load_summarizer():
+    return pipeline("summarization", model="facebook/bart-large-cnn")
+
 with tab1:
     st.subheader("💬 Sentiment Analysis")
     st.markdown("Detects whether a piece of text carries a **positive** or **negative** sentiment using DistilBERT.")
@@ -43,7 +47,28 @@ with tab1:
 
 with tab2:
     st.subheader("📝 Text Summarization")
-    st.info("⏳ Coming soon...")
+    st.markdown("Condenses long articles or paragraphs into a short summary using **BART** (Facebook).")
+
+    text_to_summarize = st.text_area("Paste your text here", placeholder="Paste a long article, paragraph, or document...", height=200, key="sum_input")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        min_len = st.slider("Min summary length (words)", 30, 100, 50)
+    with col2:
+        max_len = st.slider("Max summary length (words)", 100, 300, 150)
+
+    if st.button("Summarize", use_container_width=True):
+        if text_to_summarize.strip():
+            if len(text_to_summarize.split()) < 30:
+                st.warning("Text is too short to summarize. Try pasting a longer paragraph.")
+            else:
+                with st.spinner("Summarizing..."):
+                    summarizer = load_summarizer()
+                    summary = summarizer(text_to_summarize, max_length=max_len, min_length=min_len, do_sample=False)
+                st.subheader("📌 Summary")
+                st.write(summary[0]['summary_text'])
+        else:
+            st.warning("Please paste some text first.")
 
 with tab3:
     st.subheader("🔍 Named Entity Recognition")
