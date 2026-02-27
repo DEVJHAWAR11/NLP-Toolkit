@@ -1,5 +1,6 @@
 import streamlit as st
 from transformers import pipeline
+import pandas as pd
 
 st.set_page_config(page_title="NLP Toolkit", page_icon="🧠", layout="wide")
 
@@ -7,6 +8,7 @@ st.markdown("""
 <style>
 [data-testid="stSidebar"] {
     background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    color: #f8fafc;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -52,9 +54,7 @@ def render_ner_html(text, entities):
 with tab1:
     st.subheader("💬 Sentiment Analysis")
     st.markdown("Detects whether a piece of text carries a **positive** or **negative** sentiment using DistilBERT.")
-
     user_input = st.text_area("Enter text", placeholder="e.g. This product is absolutely amazing!", height=150)
-
     if st.button("Analyze Sentiment", use_container_width=True):
         if user_input.strip():
             with st.spinner("Running model..."):
@@ -72,15 +72,12 @@ with tab1:
 with tab2:
     st.subheader("📝 Text Summarization")
     st.markdown("Condenses long articles or paragraphs into a short summary using **BART** (Facebook).")
-
     text_to_summarize = st.text_area("Paste your text here", placeholder="Paste a long article, paragraph, or document...", height=200, key="sum_input")
-
     col1, col2 = st.columns(2)
     with col1:
         min_len = st.slider("Min summary length (words)", 30, 100, 50)
     with col2:
         max_len = st.slider("Max summary length (words)", 100, 300, 150)
-
     if st.button("Summarize", use_container_width=True):
         if text_to_summarize.strip():
             if len(text_to_summarize.split()) < 30:
@@ -97,7 +94,6 @@ with tab2:
 with tab3:
     st.subheader("🔍 Named Entity Recognition")
     st.markdown("Identifies and classifies **people, organizations, locations, and misc entities** in text using BERT-NER.")
-
     st.markdown("""
     <div style='display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;'>
         <span style='background:#a8d8ea;padding:3px 10px;border-radius:4px;font-weight:600;'>PER &nbsp;Person</span>
@@ -106,9 +102,7 @@ with tab3:
         <span style='background:#e2d5f1;padding:3px 10px;border-radius:4px;font-weight:600;'>MISC &nbsp;Miscellaneous</span>
     </div>
     """, unsafe_allow_html=True)
-
     ner_input = st.text_area("Enter text", placeholder="e.g. Elon Musk founded SpaceX in Hawthorne, California.", height=150, key="ner_input")
-
     if st.button("Extract Entities", use_container_width=True):
         if ner_input.strip():
             with st.spinner("Identifying entities..."):
@@ -118,9 +112,7 @@ with tab3:
                 st.subheader("Annotated Text")
                 html = render_ner_html(ner_input, entities)
                 st.markdown(f"<div style='line-height:2.2;font-size:1.05rem;padding:12px;background:#f9f9f9;border-radius:8px;'>{html}</div>", unsafe_allow_html=True)
-
                 st.subheader("Entities Found")
-                import pandas as pd
                 df = pd.DataFrame([{
                     "Entity": e['word'],
                     "Type": e['entity_group'],
@@ -131,3 +123,27 @@ with tab3:
                 st.info("No named entities found in the text.")
         else:
             st.warning("Please enter some text first.")
+
+# Sidebar
+with st.sidebar:
+    st.header("📖 About")
+    st.markdown("""
+    This toolkit runs **three transformer-based NLP models** locally via HuggingFace Pipelines.
+    No API keys needed.
+    """)
+    st.markdown("---")
+    st.subheader("🤖 Models Used")
+    st.markdown("""
+    - **Sentiment** — `distilbert-base-uncased-finetuned-sst-2-english`
+    - **Summarizer** — `facebook/bart-large-cnn`
+    - **NER** — `dslim/bert-base-NER`
+    """)
+    st.markdown("---")
+    st.subheader("⚡ Tech Stack")
+    st.markdown("""
+    - HuggingFace `transformers`
+    - PyTorch (inference backend)
+    - Streamlit
+    """)
+    st.markdown("---")
+    st.markdown("💡 Models are cached after first load — subsequent runs are instant.")
