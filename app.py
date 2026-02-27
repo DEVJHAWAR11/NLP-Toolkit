@@ -71,7 +71,7 @@ with tab1:
 
 with tab2:
     st.subheader("📝 Text Summarization")
-    st.markdown("Condenses long articles or paragraphs into a short summary using **DistilBART** (distilled from BART).")
+    st.markdown("Condenses long articles or paragraphs into a short summary using **DistilBART**.")
     text_to_summarize = st.text_area("Paste your text here", placeholder="Paste a long article, paragraph, or document...", height=200, key="sum_input")
     col1, col2 = st.columns(2)
     with col1:
@@ -130,7 +130,6 @@ with tab3:
         else:
             st.warning("Please enter some text first.")
 
-# Sidebar
 with st.sidebar:
     st.header("📖 About")
     st.markdown("""
